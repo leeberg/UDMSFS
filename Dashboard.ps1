@@ -6,8 +6,29 @@ New-UDDashboard -Title "Flight Buddy Development!" -Content {
     $Cache:AirplaneIcon = New-UDMapIcon -Url 'https://www.flaticon.com/svg/static/icons/png/32/633/633800.png' -Height 32 -Width 32
     $Cache:TravelDotIcon = New-UDMapIcon -Url 'https://www.flaticon.com/svg/static/icons/png/32/401/401096.png' -Height 8 -Width 8
 
+
+    $Cache:LastLong = "Start"
+    $Cache:LastLat = "Start"
+
+
+
+    # Aircraft Flight Data
     $Cache:AircraftLatitude = ""
     $Cache:AircraftLongitude = ""
+    $Cache:AircraftAirSpeed = ""
+    $Cache:AircraftAltitude = ""
+    $Cache:AircraftVerticalSpeed = ""
+    $Cache:AircraftHeading = ""
+        
+
+    # Aircraft Information
+    $Cache:ATC_MODEL = ""
+    $Cache:ATC_ID = ""
+    $Cache:ATC_AIRLINE = ""
+
+    # Aircraft Stats
+    $Cache:FUEL_TOTAL_QUANTITY = ""
+    
 
     #Stats todo
 
@@ -24,6 +45,22 @@ New-UDDashboard -Title "Flight Buddy Development!" -Content {
     # ATC AIRLINE	String64	Y	Responded	fail	
     # ATC FLIGHT NUMBER	String8	Y	Responded	fail	
     #TITLE
+
+
+    New-UDDynamic -Id 'GetAircraftFlightInformation' -Content {
+    
+        $AircraftData = (Invoke-WebRequest -Method Get -Uri 'http://localhost:5001/datapoint/aircraftflightdata/get').Content
+        
+        $AircraftDataValues = $AircraftData.Split(',').Replace('"','')
+
+        $Cache:AircraftLatitude = $AircraftDataValues[1]
+        $Cache:AircraftLongitude = $AircraftDataValues[2]
+        $Cache:AircraftAirSpeed = $AircraftDataValues[3]
+        $Cache:AircraftAltitude = $AircraftDataValues[4]
+        $Cache:AircraftVerticalSpeed = $AircraftDataValues[5]
+        $Cache:AircraftHeading = $AircraftDataValues[5]
+
+    } -AutoRefresh -AutoRefreshInterval 5 
 
 
 
@@ -100,22 +137,27 @@ New-UDDashboard -Title "Flight Buddy Development!" -Content {
         New-UDGrid -Item -ExtraSmallSize 3 -Content {
             New-UDPaper -Content {     
                 New-UDDynamic -Id 'AirspeedDynamic' -Content {
-                    $AIRSPEED_INDICATED = '102.50'
-                    $AIRSPEED_INDICATED = (Invoke-WebRequest -Method Get -Uri 'http://localhost:5001/datapoint/AIRSPEED_INDICATED/get').Content
-                    $AIRSPEED_INDICATED = $AIRSPEED_INDICATED.SubString(0,$AIRSPEED_INDICATED.IndexOf("."))
-                    New-UDTypography -Text "Airspeed: $AIRSPEED_INDICATED Knots"
-                } -AutoRefresh -AutoRefreshInterval 5 
+
+                    if($Cache:AircraftAirSpeed -ne '')
+                    {
+                        $AircraftAirSpeed = $Cache:AircraftAirSpeed.SubString(0,$Cache:AircraftAirSpeed.IndexOf("."))
+                        New-UDTypography -Text "Airspeed: $AircraftAirSpeed Knots"
+                    }
+                    
+                } -AutoRefresh -AutoRefreshInterval 1
             } -Elevation 2
         }
 
         New-UDGrid -Item -ExtraSmallSize 3 -Content {
             New-UDPaper -Content {     
                 New-UDDynamic -Id 'AltitudeDynamic' -Content {
-                    $PLANE_ALTITUDE = '5002.2355345435435'
-                    $PLANE_ALTITUDE = (Invoke-WebRequest -Method Get -Uri 'http://localhost:5001/datapoint/PLANE_ALTITUDE/get').Content
-                    $PLANE_ALTITUDE = $PLANE_ALTITUDE.SubString(0,$PLANE_ALTITUDE.IndexOf("."))
-                    New-UDTypography -Text "Altitude: $PLANE_ALTITUDE Feet"
-                } -AutoRefresh -AutoRefreshInterval 5 
+
+                    if($Cache:AircraftAltitude -ne '')
+                    {
+                        $AircraftAltitude = $Cache:AircraftAltitude.SubString(0,$Cache:AircraftAltitude.IndexOf("."))
+                        New-UDTypography -Text "Altitude: $AircraftAltitude Feet"
+                    }
+                } -AutoRefresh -AutoRefreshInterval 1
             } -Elevation 2
         }
 
@@ -124,23 +166,25 @@ New-UDDashboard -Title "Flight Buddy Development!" -Content {
         New-UDGrid -Item -ExtraSmallSize 3 -Content {
             New-UDPaper -Content {     
                 New-UDDynamic -Id 'VertSpeedDynamic' -Content {
-                    $VERTICAL_SPEED = '52.2355345435435'
-                    $VERTICAL_SPEED = (Invoke-WebRequest -Method Get -Uri 'http://localhost:5001/datapoint/VERTICAL_SPEED/get').Content
-                    $VERTICAL_SPEED = $VERTICAL_SPEED.SubString(0,$VERTICAL_SPEED.IndexOf("."))
-                    New-UDTypography -Text "Vertical Speed: $VERTICAL_SPEED FPM"
-                } -AutoRefresh -AutoRefreshInterval 5 
+                    if($Cache:AircraftVerticalSpeed -ne '')
+                    {
+                        $AircraftVerticalSpeed = $Cache:AircraftVerticalSpeed.SubString(0,$Cache:AircraftVerticalSpeed.IndexOf("."))
+                        New-UDTypography -Text "Vertical Speed: $AircraftVerticalSpeed FPM"
+                    }
+                } -AutoRefresh -AutoRefreshInterval 1
             } -Elevation 2
         }
 
         New-UDGrid -Item -ExtraSmallSize 3 -Content {
             New-UDPaper -Content {     
                 New-UDDynamic -Id 'HeadingDynamic' -Content {
-                    $Heading = '198.2355345435435'
-                    $Heading = (Invoke-WebRequest -Method Get -Uri 'http://localhost:5001/datapoint/MAGNETIC_COMPASS/get').Content
-                    $Heading = $Heading.SubString(0,$Heading.IndexOf("."))
-
-                    New-UDTypography -Text "Heading: $Heading Degrees"
-                } -AutoRefresh -AutoRefreshInterval 5 
+                    if($Cache:AircraftHeading -ne '')
+                    {
+                        $AircraftHeading = $Cache:AircraftHeading
+                        $AircraftHeading = $Heading.SubString(0,$Heading.IndexOf("."))
+                        New-UDTypography -Text "Heading: $AircraftHeading Degrees"
+                    }                    
+                } -AutoRefresh -AutoRefreshInterval 1
             } -Elevation 2
         }
 
@@ -171,26 +215,29 @@ New-UDDashboard -Title "Flight Buddy Development!" -Content {
                     New-UDDynamic -Id 'MapMarkerDynamic' -Content {
 
                         Add-UDElement -ParentId 'Feature-Group' -Content {
-                          
-                            $Latitude = (Invoke-WebRequest -Method Get -Uri 'http://localhost:5001/datapoint/PLANE_LATITUDE/get').Content.SubString(0,8)
-                            $Longitude = (Invoke-WebRequest -Method Get -Uri 'http://localhost:5001/datapoint/PLANE_LONGITUDE/get').Content.SubString(0,8)
-                              
+
                             Remove-UDElement -Id ($Cache:MarkerCount)
 
                             $Cache:MarkerCount += 1
-                            New-UDMapMarker -Id ($Cache:MarkerCount)  -Icon $Cache:AirplaneIcon -Latitude $Latitude -Longitude $Longitude -Popup (New-UDMapPopup -Content { New-UDHeading -Text "$Latitude  -  $Longitude" })
+                            New-UDMapMarker -Id ($Cache:MarkerCount)  -Icon $Cache:AirplaneIcon -Latitude $Cache:AircraftLatitude -Longitude $Cache:AircraftLongitude -Popup (New-UDMapPopup -Content { New-UDHeading -Text "$Cache:AircraftLatitude  -  $Cache:AircraftLongitude" })
                             
-                            New-UDMapMarker -Icon $Cache:TravelDotIcon -Latitude $Latitude -Longitude $Longitude
+                            if($Cache:LastLat -ne "Start" -and $Cache:LastLong -ne "Start")
+                            {
+                                New-UDMapMarker -Icon $Cache:TravelDotIcon -Latitude $Cache:LastLat -Longitude $Cache:LastLong
+                            }
+                            
+                            $Cache:LastLong = $Cache:AircraftLongitude
+                            $Cache:LastLat = $Cache:AircraftLatitude
 
                             if($Cache:FollowAircraft -eq $true)
                             {
-                                
+                                <# Bug - pending new version
                                 Set-UDElement -Id 'flightMap' -Properties  @{
-                                    latitude = $Latitude
-                                    longitude = $Longitude
+                                    latitude = $Cache:AircraftLatitude
+                                    longitude = $Cache:AircraftLongitude
                                     zoom = $Cache:MapZoom
                                 }
-                                
+                                #>
                             }
                         }
 
@@ -201,4 +248,3 @@ New-UDDashboard -Title "Flight Buddy Development!" -Content {
         }
     }
 }
-

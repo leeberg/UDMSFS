@@ -377,6 +377,88 @@ def get_datapoint_endpoint(datapoint_name):
 	return jsonify(output)
 
 
+
+@app.route('/datapoint/aircraftposition/get', methods=["GET"])
+def get_datapoint_aircraftpoisition_endpoint():
+	
+	ds = request.get_json() if request.is_json else request.form
+	index = ds.get('index')
+
+	output = (str(get_datapoint('PLANE_LATITUDE', index)) + ',' + str(get_datapoint('PLANE_LONGITUDE', index)))
+
+	if isinstance(output, bytes):
+		output = output.decode('ascii')
+
+	return jsonify(output)
+
+
+@app.route('/datapoint/aircraftflightdata/get', methods=["GET"])
+def get_datapoint_aircraftflightdata_endpoint():
+	
+	ds = request.get_json() if request.is_json else request.form
+	index = ds.get('index')
+
+	output = ''
+
+	#				0				1					2						3				4					5		
+	datapoints = ["PLANE_LATITUDE","PLANE_LONGITUDE","AIRSPEED_INDICATED", "PLANE_ALTITUDE", "VERTICAL_SPEED","MAGNETIC_COMPASS"]
+	
+	for datapoint in datapoints:
+		output += str(get_datapoint(datapoint, index)) + ','
+
+	output = output.strip(',')
+
+	if isinstance(output, bytes):
+		output = output.decode('ascii')
+
+	return jsonify(output)
+
+
+
+
+@app.route('/datapoint/aircraftinformation/get', methods=["GET"])
+def get_datapoint_aircraftinformation_endpoint():
+	
+	ds = request.get_json() if request.is_json else request.form
+	index = ds.get('index')
+
+	output = ''
+
+	datapoints = ["ATC_MODEL", "ATC_ID", "ATC_AIRLINE"]
+	
+	for datapoint in datapoints:
+		output += str(get_datapoint(datapoint, index)) + ','
+
+	output = output.strip(',')
+
+	if isinstance(output, bytes):
+		output = output.decode('ascii')
+
+	return jsonify(output)
+
+
+
+@app.route('/datapoint/aircraftstats/get', methods=["GET"])
+def get_datapoint_aircraftflightstats_endpoint():
+	
+	ds = request.get_json() if request.is_json else request.form
+	index = ds.get('index')
+
+	output = ''
+
+	datapoints = ["FUEL_TOTAL_QUANTITY"]
+	
+	for datapoint in datapoints:
+		output += str(get_datapoint(datapoint, index)) + ','
+
+	output = output.strip(',')
+
+	if isinstance(output, bytes):
+		output = output.decode('ascii')
+
+	return jsonify(output)
+
+
 def set_datapoint(datapoint_name, index=None, value_to_use=None):
 	# This function actually does the work of setting the datapoint
 
